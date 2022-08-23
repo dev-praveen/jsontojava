@@ -15,19 +15,9 @@ import java.util.List;
 
 public class App {
 
-  private static final String GET_URL = "https://jsonplaceholder.typicode.com/posts";
+  private static final String GET_URL = "https://jsonplaceholder.typicode.com/users";
 
-  public static void main(String[] args) throws IOException {
-
-    final String json = sendGET();
-    Type listType = new TypeToken<ArrayList<Post>>() {}.getType();
-    final List<Post> posts = new Gson().fromJson(json, listType);
-
-    final Post postObj = posts.stream().filter(post -> post.getId() == 4).findFirst().get();
-    System.out.println(postObj);
-  }
-
-  private static String sendGET() throws IOException {
+  private String makeUserApiCall() throws IOException {
     URL obj = new URL(GET_URL);
     HttpURLConnection con = (HttpURLConnection) obj.openConnection();
     con.setRequestMethod("GET");
@@ -48,44 +38,11 @@ public class App {
       throw new InterruptedIOException("GET request not worked.. some thing went wrong");
     }
   }
-}
 
-class Post {
+  public List<User> fetchUsers() throws IOException {
 
-  private int userId;
-  private int id;
-  private String title;
-  private String body;
-
-  @Override
-  public String toString() {
-    return "Post{"
-        + "userId="
-        + userId
-        + ", id="
-        + id
-        + ", title='"
-        + title
-        + '\''
-        + ", body='"
-        + body
-        + '\''
-        + '}';
-  }
-
-  public int getUserId() {
-    return userId;
-  }
-
-  public int getId() {
-    return id;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public String getBody() {
-    return body;
+    final String json = makeUserApiCall();
+    Type listType = new TypeToken<ArrayList<User>>() {}.getType();
+    return new Gson().fromJson(json, listType);
   }
 }
