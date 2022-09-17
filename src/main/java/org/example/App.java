@@ -3,24 +3,34 @@ package org.example;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class App {
 
-  private static final String GET_URL = "https://jsonplaceholder.typicode.com/users";
+  private static HttpURLConnection openConnection(String apiUrl, String apiMethod)
+      throws IOException {
 
-  private String makeUserApiCall() throws IOException {
-    URL obj = new URL(GET_URL);
+    URL obj = new URL(apiUrl);
     HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-    con.setRequestMethod("GET");
+    con.setRequestMethod(apiMethod);
+    con.setRequestProperty("Accept", "application/json");
+    if ("POST".equals(apiMethod)) {
+      con.setRequestProperty("Content-Type", "application/json");
+      con.setDoOutput(true);
+    }
+    return con;
+  }
+
+  private static String getUserApiCall(String apiUrl, String apiMethod) throws IOException {
+
+    final HttpURLConnection con = openConnection(apiUrl, apiMethod);
     int responseCode = con.getResponseCode();
     System.out.println("GET Response Code :: " + responseCode);
     if (responseCode == HttpURLConnection.HTTP_OK) { // success
@@ -39,10 +49,32 @@ public class App {
     }
   }
 
-  public List<User> fetchUsers() throws IOException {
+  private static String createUserApiCall(String apiUrl, String apiMethod, String requestBody)
+      throws IOException {
 
-    final String json = makeUserApiCall();
+    final HttpURLConnection con = openConnection(apiUrl, apiMethod);
+    OutputStream os = con.getOutputStream();
+    byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
+    os.write(input, 0, input.length);
+    BufferedReader br =
+        new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8));
+    StringBuilder response = new StringBuilder();
+    String responseLine;
+    while ((responseLine = br.readLine()) != null) {
+      response.append(responseLine.trim());
+    }
+    return response.toString();
+  }
+
+  public List<User> fetchUsers(String apiUrl, String apiMethod) throws IOException {
+
+    final String json = getUserApiCall(apiUrl, apiMethod);
     Type listType = new TypeToken<ArrayList<User>>() {}.getType();
     return new Gson().fromJson(json, listType);
+  }
+
+  public String createUser(String apiUrl, String apiMethod, String requestBody) throws IOException {
+
+    return createUserApiCall(apiUrl, apiMethod, requestBody);
   }
 }
